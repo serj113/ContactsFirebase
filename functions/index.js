@@ -1,27 +1,44 @@
 const functions = require('firebase-functions');
-
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//  response.send("Hello from Firebase!");
-// });
-
-// The Firebase Admin SDK to access the Firebase Realtime Database.
 const admin = require('firebase-admin');
-admin.initializeApp();
-
 const express = require('express');
+const bodyParser = require('body-parser');
 
+admin.initializeApp(functions.config().firebase);
+
+const db = admin.firestore();
 const app = express();
-// const main = express();
+const main = express();
+
+main.use('/api', app);
+main.use(bodyParser.json());
+main.use(bodyParser.urlencoded({ extended: false }));
+
+exports.api = functions.https.onRequest(main);
+
 app.get('/contacts', (request, response) => {
     response.status(200).json({
         message: 'asik'
     });
 });
 
-exports.app = functions.https.onRequest(app);
+app.post('/contacts', (request, response) => {
+  try {
+    var _a = request.body, name = _a.name, phone = _a.phone, email = _a.email;
+    var data = {
+      name: name,
+      phone: phone,
+      email: email
+    };
+    const ref = db.collection('notes').add(data);
+    var contact = ref.get();
+    response.json({
+        id: ref.id,
+        data: contact.data
+    });
+  } catch (error) {
+      response.status(500).send(error);
+  }
+});
 
 // main.use('/api/v1', app);
 // main.use(bodyParser.json());

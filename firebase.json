@@ -12,8 +12,8 @@
       "**/node_modules/**"
     ],
     "rewrites": [{
-      "source": "/contacts",
-      "function": "app"
+      "source": "/api/**",
+      "function": "api"
     }]
   }
 }
