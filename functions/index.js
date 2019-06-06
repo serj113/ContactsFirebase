@@ -21,7 +21,7 @@ app.get('/contacts', (request, response) => {
     });
 });
 
-app.post('/contacts', (request, response) => {
+app.post('/contacts', async(request, response) => {
   try {
     var _a = request.body, name = _a.name, phone = _a.phone, email = _a.email;
     var data = {
@@ -29,11 +29,12 @@ app.post('/contacts', (request, response) => {
       phone: phone,
       email: email
     };
-    const ref = db.collection('notes').add(data);
-    var contact = ref.get();
-    response.json({
-        id: ref.id,
-        data: contact.data
+    const ref = await db.collection('contacts').add(data);
+    const contact = await ref.get();
+    response.status(200).json({
+      message: "berhasil",
+      id: ref.id,
+      data: contact.data()
     });
   } catch (error) {
       response.status(500).send(error);
