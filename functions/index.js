@@ -15,10 +15,27 @@ main.use(bodyParser.urlencoded({ extended: false }));
 
 exports.api = functions.https.onRequest(main);
 
-app.get('/contacts', (request, response) => {
-    response.status(200).json({
-        message: 'asik'
+app.get('/contacts', async(request, response) => {
+  try {
+    var contactsRef = await db.collection('contacts').get();
+    var contacts = [];
+    contactsRef.forEach(contact => {
+      var contactData = contact.data()
+      contacts.push({
+        id: contact.id,
+        name: contactData.name,
+        phone: contactData.phone,
+        email: contactData.email
+      });
     });
+    response.status(200).json({
+      status: 200,
+      message: "success",
+      data: contacts
+    });
+  } catch (error) {
+      response.status(500).send(error);
+  }
 });
 
 app.post('/contacts', async(request, response) => {
@@ -31,47 +48,27 @@ app.post('/contacts', async(request, response) => {
     };
     const ref = await db.collection('contacts').add(data);
     const contact = await ref.get();
+    const contactData = contact.data()
+    // var contacts = [];
+    // contacts.push({
+    //   id: contact.id,
+    //   name: contactData.name,
+    //   phone: contactData.phone,
+    //   email: contactData.email
+    // });
     response.status(200).json({
-      message: "berhasil",
-      id: ref.id,
-      data: contact.data()
+      status: 200,
+      message: "success",
+      data: [
+        {
+          id: ref.id,
+          name: contactData.name,
+          phone: contactData.phone,
+          email: contactData.email
+        }
+      ]
     });
   } catch (error) {
       response.status(500).send(error);
   }
 });
-
-// main.use('/api/v1', app);
-// main.use(bodyParser.json());
-// main.use(bodyParser.urlencoded({ extended: false }));
-
-// Take the text parameter passed to this HTTP endpoint and insert it into the
-// Realtime Database under the path /messages/:pushId/original
-exports.addMessage = functions.https.onRequest(async (req, res) => {
-    // Grab the text parameter.
-    const original = req.query.text;
-    // Push the new message into the Realtime Database using the Firebase Admin SDK.
-    const snapshot = await admin.database().ref('/messages').push({original: original});
-    // Redirect with 303 SEE OTHER to the URL of the pushed object in the Firebase console.
-    res.redirect(303, snapshot.ref.toString());
-  });
-
-// Listens for new messages added to /messages/:pushId/original and creates an
-// uppercase version of the message to /messages/:pushId/uppercase
-exports.makeUppercase = functions.database.ref('/messages/{pushId}/original')
-.onCreate((snapshot, context) => {
-  // Grab the current value of what was written to the Realtime Database.
-  const original = snapshot.val();
-  console.log('Uppercasing', context.params.pushId, original);
-  const uppercase = original.toUpperCase();
-  // You must return a Promise when performing asynchronous tasks inside a Functions such as
-  // writing to the Firebase Realtime Database.
-  // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
-  return snapshot.ref.parent.child('uppercase').set(uppercase);
-});
-
-// exports.contacts = functions.https.onRequest(async (req, res) => {
-//     res.status(200).json({
-//         message: 'tada'
-//     })
-// });
